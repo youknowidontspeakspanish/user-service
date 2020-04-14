@@ -1,1 +1,38 @@
-buildPack: go
+buildPack: none
+pipelineConfig:
+  env:
+    # The variable 'PREVIEW_NAMESPACE' has the value '$APP_NAME-$BRANCH_NAME', which cannot be converted.
+    - name APP_NAME
+      value: user-service
+  pipelines:
+    pullRequest:
+      pipeline:
+        stages:
+          - name: PR Build
+            agent:
+              image: ruby
+            steps:
+              - name: docker build
+                sh: docker build --network host -t $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION .
+              - name: docker push
+                sh docker push $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION
+    release:
+      pipeline:
+        stages:
+          - name: Release Build
+            agent:
+              image: ruby
+            steps:
+            - dir: /home/jenkins/go/src/github/$ORG/$APP_NAME/charts/$APP_NAME
+              steps:
+              - name: step0
+                sh: jx step changelog --version v\$(cat ../../VERSION)
+              - name: docker build
+                sh: docker build --network host -t $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat ../../VERSION)
+              - name: docker push
+                sh: docker push $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat ../../VERSION)
+              - name: helm release
+                sh: jx step helm release
+              - name: jx promote
+                sh: jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)
+
