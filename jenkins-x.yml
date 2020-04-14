@@ -22,7 +22,7 @@ pipelineConfig:
         stages:
           - name: Release Build
             steps:
-            - dir: /home/jenkins/go/src/github/$ORG/$APP_NAME/charts/$APP_NAME
+            - dir: charts/$APP_NAME
               steps:
               - name: step0
                 sh: jx step changelog --version v\$(cat ../../VERSION)
