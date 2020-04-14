@@ -1,4 +1,7 @@
 buildPack: none
+agent:
+  label: jenkins-ruby
+  container: ruby
 pipelineConfig:
   env:
     # The variable 'PREVIEW_NAMESPACE' has the value '$APP_NAME-$BRANCH_NAME', which cannot be converted.
@@ -9,8 +12,6 @@ pipelineConfig:
       pipeline:
         stages:
           - name: PR Build
-            agent:
-              image: ruby
             steps:
               - name: docker build
                 sh: docker build --network host -t $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION .
@@ -20,8 +21,6 @@ pipelineConfig:
       pipeline:
         stages:
           - name: Release Build
-            agent:
-              image: ruby
             steps:
             - dir: /home/jenkins/go/src/github/$ORG/$APP_NAME/charts/$APP_NAME
               steps:
@@ -35,4 +34,3 @@ pipelineConfig:
                 sh: jx step helm release
               - name: jx promote
                 sh: jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)
-
